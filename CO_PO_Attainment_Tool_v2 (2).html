@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CO–PO Attainment Calculator | PSCMR</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  --ink:#1b2a41;          /* deep slate-navy */
+  --ink-soft:#3d5069;
+  --paper:#f7f8f6;
+  --card:#ffffff;
+  --line:#dde3ea;
+  --accent:#0e6e5c;       /* academic green */
+  --accent-soft:#e2f1ed;
+  --amber:#b7791f;
+  --red:#b3372f;
+  --radius:10px;
+  font-size:15px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",sans-serif;
+  background:var(--paper);color:var(--ink);line-height:1.5;padding-bottom:60px;
+}
+header.app{
+  background:var(--ink);color:#fff;padding:18px 22px;
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;
+  border-bottom:4px solid var(--accent);
+}
+header.app h1{font-size:1.25rem;font-weight:600;letter-spacing:.3px}
+header.app .sub{font-size:.8rem;opacity:.75}
+nav.steps{
+  display:flex;flex-wrap:wrap;background:var(--card);border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:50;
+}
+nav.steps button{
+  flex:1 1 auto;min-width:120px;padding:12px 8px;border:none;background:none;cursor:pointer;
+  font:inherit;font-size:.85rem;font-weight:600;color:var(--ink-soft);
+  border-bottom:3px solid transparent;transition:.15s;
+}
+nav.steps button .n{
+  display:inline-block;width:20px;height:20px;line-height:20px;border-radius:50%;
+  background:var(--line);color:var(--ink-soft);font-size:.72rem;margin-right:6px;
+}
+nav.steps button.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--accent-soft)}
+nav.steps button.active .n{background:var(--accent);color:#fff}
+nav.steps button.done .n{background:var(--ink);color:#fff}
+main{max-width:1250px;margin:0 auto;padding:20px 16px}
+section.panel{display:none}
+section.panel.active{display:block}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px;margin-bottom:18px;box-shadow:0 1px 2px rgba(27,42,65,.05);
+}
+.card h2{font-size:1.05rem;margin-bottom:4px;color:var(--ink)}
+.card h3{font-size:.92rem;margin:14px 0 6px;color:var(--accent)}
+.card p.hint{font-size:.82rem;color:var(--ink-soft);margin-bottom:12px}
+.grid{display:grid;gap:12px}
+.grid.c2{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.grid.c3{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+label.f{display:block;font-size:.78rem;font-weight:600;color:var(--ink-soft);margin-bottom:3px}
+input[type=text],input[type=number],select,textarea{
+  width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;
+  font:inherit;font-size:.88rem;background:#fff;color:var(--ink);
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+textarea{resize:vertical}
+.btn{
+  display:inline-block;padding:9px 16px;border:none;border-radius:7px;cursor:pointer;
+  font:inherit;font-size:.85rem;font-weight:600;transition:.15s;margin:4px 6px 4px 0;
+}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{background:#0a584a}
+.btn.ghost{background:#fff;color:var(--accent);border:1.5px solid var(--accent)}
+.btn.ghost:hover{background:var(--accent-soft)}
+.btn.dark{background:var(--ink);color:#fff}
+.btn.dark:hover{background:#101d30}
+.btn.danger{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.pill{
+  display:inline-block;padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700;
+}
+.pill.ok{background:var(--accent-soft);color:var(--accent)}
+.pill.warn{background:#fdf3e2;color:var(--amber)}
+.pill.bad{background:#fbe9e7;color:var(--red)}
+.tablewrap{overflow:auto;max-height:65vh;border:1px solid var(--line);border-radius:8px;margin-top:8px}
+table{border-collapse:collapse;width:100%;font-size:.82rem;background:#fff}
+th,td{border:1px solid var(--line);padding:5px 8px;text-align:center;white-space:nowrap}
+thead th{
+  background:var(--ink);color:#fff;position:sticky;top:0;z-index:5;font-weight:600;font-size:.76rem;
+}
+thead tr:nth-child(2) th{top:29px;background:var(--ink-soft)}
+tbody tr:nth-child(even){background:#f4f7f9}
+td.reg,th.reg{position:sticky;left:0;background:var(--accent-soft);font-weight:700;z-index:4;text-align:left}
+thead th.reg{z-index:8;background:var(--ink)}
+td input{
+  width:56px;padding:4px;text-align:center;border:1px solid transparent;background:transparent;font-size:.82rem;
+}
+td input:hover{border-color:var(--line);background:#fff}
+td input:focus{border-color:var(--accent);background:#fff}
+td select{width:70px;padding:4px}
+.lvl3{background:#dff0e8 !important;color:#0a5c3c;font-weight:700}
+.lvl2{background:#fdf6df !important;color:#8a6d1a;font-weight:700}
+.lvl1{background:#fdeee0 !important;color:#a05a1c;font-weight:700}
+.lvl0{background:#fbe5e3 !important;color:#a33028;font-weight:700}
+.statbar{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0}
+.stat{
+  background:var(--accent-soft);border:1px solid #cbe4dd;border-radius:8px;
+  padding:8px 14px;font-size:.8rem;color:var(--ink-soft)
+}
+.stat b{display:block;font-size:1.15rem;color:var(--accent)}
+.drop{
+  border:2px dashed var(--line);border-radius:10px;padding:22px;text-align:center;
+  color:var(--ink-soft);font-size:.85rem;cursor:pointer;transition:.15s;background:#fff;
+}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.msg{padding:10px 14px;border-radius:8px;font-size:.84rem;margin:10px 0;display:none}
+.msg.show{display:block}
+.msg.ok{background:var(--accent-soft);color:var(--accent);border:1px solid #bfe0d7}
+.msg.err{background:#fbe9e7;color:var(--red);border:1px solid #f2c4c0}
+.copo-grid td input{width:38px}
+.footer-note{max-width:1250px;margin:10px auto;padding:0 16px;font-size:.75rem;color:var(--ink-soft)}
+.report-head{
+  text-align:center;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:14px;
+}
+.report-head h2{font-size:1.15rem}
+.report-head .d{font-size:.85rem;color:var(--ink-soft)}
+@media(max-width:640px){
+  td input{width:44px}
+  nav.steps button{font-size:.72rem;min-width:90px}
+}
+@media print{
+  nav.steps,header.app,.btn,.drop,.no-print{display:none !important}
+  section.panel{display:block !important}
+  .card{box-shadow:none;border:none}
+}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <h1>CO–PO Attainment Calculator</h1>
+  <span class="sub">PSCMR College of Engineering &amp; Technology · NBA-style direct + indirect attainment</span>
+</header>
+
+<nav class="steps">
+  <button data-step="0" class="active"><span class="n">1</span>Setup &amp; Roll Numbers</button>
+  <button data-step="1"><span class="n">2</span>Marks Entry</button>
+  <button data-step="2"><span class="n">3</span>CES &amp; CO–PO Mapping</button>
+  <button data-step="3"><span class="n">4</span>Reports &amp; Downloads</button>
+</nav>
+
+<main>
+
+<!-- ================= STEP 1 : SETUP ================= -->
+<section class="panel active" id="p0">
+  <div class="card">
+    <h2>Course information</h2>
+    <p class="hint">Appears on every generated report header.</p>
+    <div class="grid c3">
+      <div><label class="f">Institution</label><input type="text" id="inst" value="PSCMR College of Engineering & Technology"></div>
+      <div><label class="f">Department</label><input type="text" id="dept" value="Department of CSE (IoT & Cyber Security)"></div>
+      <div><label class="f">Faculty name</label><input type="text" id="fac" value=""></div>
+      <div><label class="f">Course / Subject</label><input type="text" id="sub" value=""></div>
+      <div><label class="f">Course code</label><input type="text" id="subcode" value=""></div>
+      <div><label class="f">Academic year</label><input type="text" id="ay" value="2025-26"></div>
+      <div><label class="f">Year &amp; Semester</label><input type="text" id="ysem" value="II - II"></div>
+      <div><label class="f">Class / Section</label><input type="text" id="cls" value=""></div>
+      <div><label class="f">Regulation</label><input type="text" id="reg" value="R23"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Attainment rules</h2>
+    <p class="hint">Defaults follow the department workbook (Read Me sheet). Adjust if your rubric differs.</p>
+    <div class="grid c3">
+      <div><label class="f">Target: student achieves a CO when % ≥</label><input type="number" id="cfg_target" value="60" min="1" max="100"></div>
+      <div><label class="f">Level 3 when % of achievers ≥</label><input type="number" id="cfg_l3" value="80" min="1" max="100"></div>
+      <div><label class="f">Level 2 when % of achievers ≥</label><input type="number" id="cfg_l2" value="70" min="1" max="100"></div>
+      <div><label class="f">Level 1 when % of achievers ≥</label><input type="number" id="cfg_l1" value="60" min="1" max="100"></div>
+      <div><label class="f">SEE pass grade point ≥ (achieved target)</label><input type="number" id="cfg_seepass" value="5" min="0" max="10"></div>
+      <div><label class="f">Target attainment level</label><input type="number" id="cfg_targetlvl" value="3" min="1" max="3"></div>
+    </div>
+    <h3>Weightages</h3>
+    <div class="grid c3">
+      <div><label class="f">Direct = SEE weight (%)</label><input type="number" id="cfg_wsee" value="70" min="0" max="100"></div>
+      <div><label class="f">Direct = Internal weight (%)</label><input type="number" id="cfg_wint" value="30" min="0" max="100"></div>
+      <div><label class="f">Overall = Direct weight (%)</label><input type="number" id="cfg_wdir" value="90" min="0" max="100"></div>
+      <div><label class="f">Overall = Indirect (CES) weight (%)</label><input type="number" id="cfg_wind" value="10" min="0" max="100"></div>
+    </div>
+    <h3>Maximum marks</h3>
+    <div class="grid c3">
+      <div><label class="f">Assignment per CO</label><input type="number" id="cfg_maxasg" value="5" min="1"></div>
+      <div><label class="f">Mid descriptive per CO</label><input type="number" id="cfg_maxdesc" value="10" min="1"></div>
+      <div><label class="f">Objective per mid</label><input type="number" id="cfg_maxobj" value="10" min="1"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Roll numbers</h2>
+    <p class="hint">Paste one roll number per line (or comma-separated), or upload an Excel/CSV whose first column contains roll numbers. Mid-1 covers CO1–CO3, Mid-2 covers CO4–CO6.</p>
+    <textarea id="rollsInput" rows="7" placeholder="24KT1A0401&#10;24KT1A0402&#10;24KT1A0403"></textarea>
+    <div style="margin-top:10px">
+      <button class="btn primary" onclick="loadRolls()">Load roll numbers</button>
+      <button class="btn ghost" onclick="document.getElementById('rollFile').click()">Upload roll list (Excel/CSV)</button>
+      <input type="file" id="rollFile" accept=".xlsx,.xls,.csv" hidden>
+      <button class="btn danger" onclick="clearAll()">Clear all saved data</button>
+    </div>
+    <div class="msg" id="rollMsg"></div>
+    <div class="statbar" id="rollStats"></div>
+  </div>
+</section>
+
+<!-- ================= STEP 2 : MARKS ================= -->
+<section class="panel" id="p1">
+  <div class="card">
+    <h2>Upload marks from Excel</h2>
+    <p class="hint">Download the template (roll numbers pre-filled), enter marks in Excel, then upload it back. Partial uploads are fine — only the columns present in the file are updated. Mark absentees as <b>AB</b>. SEE grade accepts letter grades (S A B C D E F AB) or grade points (0–10).</p>
+    <button class="btn dark" onclick="downloadTemplate()">Download marks template (.xlsx)</button>
+    <div class="drop" id="dropZone" onclick="document.getElementById('marksFile').click()">
+      Drop the filled template here, or click to choose a file
+    </div>
+    <input type="file" id="marksFile" accept=".xlsx,.xls,.csv" hidden>
+    <div class="msg" id="marksMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>Marks table <span style="font-weight:400;font-size:.8rem;color:var(--ink-soft)">(editable — changes save automatically)</span></h2>
+    <div class="statbar" id="marksStats"></div>
+    <div class="tablewrap" id="marksTableWrap"></div>
+  </div>
+</section>
+
+<!-- ================= STEP 3 : ONE-TIME ================= -->
+<section class="panel" id="p2">
+  <div class="card">
+    <h2>Course End Survey — indirect attainment (one-time entry)</h2>
+    <p class="hint">Enter the CES score for each CO on a 0–3 scale (e.g. 2.64).</p>
+    <div class="grid c3" id="cesGrid"></div>
+  </div>
+
+  <div class="card">
+    <h2>CO–PO / PSO mapping (one-time entry)</h2>
+    <p class="hint">Enter correlation levels 1 (low), 2 (medium), 3 (high). Leave blank where a CO does not map to a PO.</p>
+    <div class="tablewrap"><table class="copo-grid" id="copoTable"></table></div>
+    <div style="margin-top:10px">
+      <button class="btn ghost" onclick="clearCoPo()">Clear mapping</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= STEP 4 : REPORTS ================= -->
+<section class="panel" id="p3">
+  <div class="card no-print">
+    <h2>Generate &amp; download</h2>
+    <p class="hint">Reports compute from the current marks, CES and CO–PO mapping. Action-proposed text you type below is included in downloads.</p>
+    <button class="btn primary" onclick="renderReports()">Generate / refresh reports</button>
+    <button class="btn dark" onclick="exportExcel()">Download Excel (.xlsx)</button>
+    <button class="btn dark" onclick="exportPDF()">Download PDF</button>
+    <div class="msg" id="repMsg"></div>
+  </div>
+  <div id="reportsArea"></div>
+</section>
+
+</main>
+
+<div class="footer-note">
+  Data is stored locally in this browser (nothing is uploaded anywhere). Use “Download Excel” to keep a permanent copy.
+</div>
+
+<script>
+/* ============================================================
+   STATE
+============================================================ */
+const COs = ['CO1','CO2','CO3','CO4','CO5','CO6'];
+const POS = ['PO1','PO2','PO3','PO4','PO5','PO6','PO7','PO8','PO9','PO10','PO11','PO12','PSO1','PSO2','PSO3','PSO4'];
+const GRADE_GP = {S:10,A:9,B:8,C:7,D:6,E:5,F:0};
+
+// marks per student: {a:[6], d:[6], o1, o2, see}
+let S = {
+  rolls: [],
+  marks: {},            // roll -> record
+  ces: [0,0,0,0,0,0],
+  copo: COs.map(()=>POS.map(()=>'')),
+  actions: ['','','','','',''],
+  info: {}, cfg: {}
+};
+
+const $ = id => document.getElementById(id);
+const infoIds = ['inst','dept','fac','sub','subcode','ay','ysem','cls','reg'];
+const cfgIds  = ['cfg_target','cfg_l3','cfg_l2','cfg_l1','cfg_seepass','cfg_targetlvl',
+                 'cfg_wsee','cfg_wint','cfg_wdir','cfg_wind','cfg_maxasg','cfg_maxdesc','cfg_maxobj'];
+
+function persist(){
+  S.info = {}; infoIds.forEach(k=>S.info[k]=$(k).value);
+  S.cfg  = {}; cfgIds.forEach(k=>S.cfg[k]=$(k).value);
+  try{ localStorage.setItem('copoToolV1', JSON.stringify(S)); }catch(e){}
+}
+function restore(){
+  try{
+    const raw = localStorage.getItem('copoToolV1');
+    if(!raw) return;
+    const saved = JSON.parse(raw);
+    Object.assign(S, saved);
+    infoIds.forEach(k=>{ if(S.info && S.info[k]!==undefined) $(k).value = S.info[k]; });
+    cfgIds.forEach(k=>{ if(S.cfg && S.cfg[k]!==undefined) $(k).value = S.cfg[k]; });
+    if(S.rolls.length){ $('rollsInput').value = S.rolls.join('\n'); }
+  }catch(e){}
+}
+function clearAll(){
+  if(!confirm('This clears roll numbers, marks, CES, mapping and actions saved in this browser. Continue?')) return;
+  try{ localStorage.removeItem('copoToolV1'); }catch(e){}
+  location.reload();
+}
+[...infoIds, ...cfgIds].forEach(k=>{
+  document.addEventListener('DOMContentLoaded',()=>{ $(k).addEventListener('change',persist); });
+});
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+document.querySelectorAll('nav.steps button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('nav.steps button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('section.panel').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    $('p'+b.dataset.step).classList.add('active');
+    if(b.dataset.step==='1') renderMarksTable();
+    if(b.dataset.step==='2'){ renderCES(); renderCoPo(); }
+    if(b.dataset.step==='3') renderReports();
+    window.scrollTo(0,0);
+  });
+});
+
+function showMsg(id, text, ok=true){
+  const m = $(id); m.textContent = text;
+  m.className = 'msg show ' + (ok?'ok':'err');
+  setTimeout(()=>m.classList.remove('show'), 6000);
+}
+
+/* ============================================================
+   STEP 1 — ROLL NUMBERS
+============================================================ */
+function blankRecord(){ return {a:['','','','','',''], d:['','','','','',''], o1:'', o2:'', see:''}; }
+
+function loadRolls(){
+  const txt = $('rollsInput').value;
+  const rolls = txt.split(/[\n,;\t]+/).map(x=>x.trim().toUpperCase()).filter(x=>x.length>=4);
+  const uniq = [...new Set(rolls)];
+  if(!uniq.length){ showMsg('rollMsg','No roll numbers found. Paste one per line.',false); return; }
+  S.rolls = uniq;
+  uniq.forEach(r=>{ if(!S.marks[r]) S.marks[r]=blankRecord(); });
+  Object.keys(S.marks).forEach(r=>{ if(!uniq.includes(r)) delete S.marks[r]; });
+  persist(); rollStats();
+  showMsg('rollMsg', uniq.length + ' roll numbers loaded. Move to Marks Entry.', true);
+  document.querySelector('nav.steps button[data-step="0"]').classList.add('done');
+}
+function rollStats(){
+  $('rollStats').innerHTML = S.rolls.length
+    ? `<div class="stat"><b>${S.rolls.length}</b>students loaded</div>` : '';
+}
+$('rollFile') && $('rollFile').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ev=>{
+    try{
+      const wb = XLSX.read(ev.target.result,{type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws,{header:1});
+      const rolls = rows.map(r=>String(r[0]||'').trim().toUpperCase())
+                        .filter(x=>/^[A-Z0-9]{6,}$/.test(x));
+      $('rollsInput').value = [...new Set(rolls)].join('\n');
+      loadRolls();
+    }catch(err){ showMsg('rollMsg','Could not read that file: '+err.message,false); }
+  };
+  rd.readAsArrayBuffer(f);
+  e.target.value='';
+});
+
+/* ============================================================
+   STEP 2 — MARKS TEMPLATE / UPLOAD / TABLE
+============================================================ */
+const HEADERS = ['Reg No',
+  'ASG1_CO1','ASG1_CO2','ASG1_CO3','ASG2_CO4','ASG2_CO5','ASG2_CO6',
+  'MID1_CO1','MID1_CO2','MID1_CO3','OBJ1',
+  'MID2_CO4','MID2_CO5','MID2_CO6','OBJ2','SEE_GRADE'];
+
+function downloadTemplate(){
+  if(!S.rolls.length){ showMsg('marksMsg','Load roll numbers first (Step 1).',false); return; }
+  const rows = [HEADERS];
+  S.rolls.forEach(r=>{
+    const m = S.marks[r]||blankRecord();
+    rows.push([r, m.a[0],m.a[1],m.a[2],m.a[3],m.a[4],m.a[5],
+               m.d[0],m.d[1],m.d[2],m.o1, m.d[3],m.d[4],m.d[5],m.o2, m.see]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = HEADERS.map((h,i)=>({wch: i===0?14:10}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Marks');
+  const g = XLSX.utils.aoa_to_sheet([
+    ['Marks entry guide'],
+    ['Assignment per CO: max '+$('cfg_maxasg').value],
+    ['Mid descriptive per CO: max '+$('cfg_maxdesc').value],
+    ['Objective per mid: max '+$('cfg_maxobj').value],
+    ['SEE_GRADE: letter grade S/A/B/C/D/E/F, grade point 0-10, or AB for absent'],
+    ['Use AB for absent in any column'],
+    ['Mid-1 covers CO1-CO3; Mid-2 covers CO4-CO6']
+  ]);
+  XLSX.utils.book_append_sheet(wb, g, 'Guide');
+  XLSX.writeFile(wb, 'Marks_Template_'+(S.info.subcode||'course')+'.xlsx');
+}
+
+function normHeader(h){ return String(h||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+const HKEYS = {}; HEADERS.forEach(h=>HKEYS[normHeader(h)]=h);
+// friendly aliases
+const ALIAS = {
+  'REGNO':'Reg No','ROLLNO':'Reg No','ROLLNUMBER':'Reg No','REGDNO':'Reg No','HTNO':'Reg No',
+  'SEE':'SEE_GRADE','SEEGRADE':'SEE_GRADE','SEMEND':'SEE_GRADE','GRADE':'SEE_GRADE',
+  'OBJECTIVE1':'OBJ1','OBJECTIVE2':'OBJ2','OBJMID1':'OBJ1','OBJMID2':'OBJ2'
+};
+
+function parseMarksFile(f){
+  const rd = new FileReader();
+  rd.onload = ev=>{
+    try{
+      const wb = XLSX.read(ev.target.result,{type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws,{header:1, raw:true, defval:''});
+      if(rows.length<2) throw new Error('File has no data rows.');
+      const head = rows[0].map(h=>{
+        const n = normHeader(h);
+        return HKEYS[n] || ALIAS[n] || null;
+      });
+      const regCol = head.indexOf('Reg No');
+      if(regCol<0) throw new Error('Could not find a "Reg No" column.');
+      let updated=0, skipped=0, cols=new Set();
+      for(let i=1;i<rows.length;i++){
+        const roll = String(rows[i][regCol]||'').trim().toUpperCase();
+        if(!roll) continue;
+        if(!S.marks[roll]){
+          if(!S.rolls.includes(roll)){ skipped++; continue; }
+          S.marks[roll]=blankRecord();
+        }
+        const m = S.marks[roll];
+        head.forEach((h,c)=>{
+          if(!h || h==='Reg No') return;
+          let v = rows[i][c];
+          if(v===''||v===null||v===undefined) return;
+          v = String(v).trim().toUpperCase();
+          cols.add(h);
+          if(h==='SEE_GRADE'){ m.see = v; return; }
+          const asgIdx = {'ASG1_CO1':0,'ASG1_CO2':1,'ASG1_CO3':2,'ASG2_CO4':3,'ASG2_CO5':4,'ASG2_CO6':5}[h];
+          if(asgIdx!==undefined){ m.a[asgIdx]=v; return; }
+          const dIdx = {'MID1_CO1':0,'MID1_CO2':1,'MID1_CO3':2,'MID2_CO4':3,'MID2_CO5':4,'MID2_CO6':5}[h];
+          if(dIdx!==undefined){ m.d[dIdx]=v; return; }
+          if(h==='OBJ1') m.o1=v;
+          if(h==='OBJ2') m.o2=v;
+        });
+        updated++;
+      }
+      persist(); renderMarksTable();
+      showMsg('marksMsg', `Updated ${updated} students across ${cols.size} mark columns.` +
+        (skipped? ` Skipped ${skipped} rows with unknown roll numbers.`:''), true);
+    }catch(err){ showMsg('marksMsg','Upload failed: '+err.message,false); }
+  };
+  rd.readAsArrayBuffer(f);
+}
+$('marksFile').addEventListener('change', e=>{ if(e.target.files[0]) parseMarksFile(e.target.files[0]); e.target.value=''; });
+const dz = $('dropZone');
+['dragover','dragenter'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('over');}));
+dz.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) parseMarksFile(f); });
+
+function renderMarksTable(){
+  const wrap = $('marksTableWrap');
+  if(!S.rolls.length){ wrap.innerHTML = '<p style="padding:16px;color:var(--ink-soft)">Load roll numbers in Step 1 first.</p>'; $('marksStats').innerHTML=''; return; }
+  let h = `<table><thead>
+    <tr>
+      <th class="reg" rowspan="2">Reg No</th>
+      <th colspan="3">Assignment Mid-1 (${$('cfg_maxasg').value}M)</th>
+      <th colspan="3">Assignment Mid-2 (${$('cfg_maxasg').value}M)</th>
+      <th colspan="3">Mid-1 Descriptive (${$('cfg_maxdesc').value}M)</th>
+      <th rowspan="2">Obj-1<br>(${$('cfg_maxobj').value}M)</th>
+      <th colspan="3">Mid-2 Descriptive (${$('cfg_maxdesc').value}M)</th>
+      <th rowspan="2">Obj-2<br>(${$('cfg_maxobj').value}M)</th>
+      <th rowspan="2">SEE<br>Grade</th>
+    </tr>
+    <tr>
+      <th>CO1</th><th>CO2</th><th>CO3</th><th>CO4</th><th>CO5</th><th>CO6</th>
+      <th>CO1</th><th>CO2</th><th>CO3</th>
+      <th>CO4</th><th>CO5</th><th>CO6</th>
+    </tr></thead><tbody>`;
+  S.rolls.forEach(r=>{
+    const m = S.marks[r]||blankRecord();
+    h += `<tr><td class="reg">${r}</td>`;
+    for(let i=0;i<6;i++) h+=`<td><input data-r="${r}" data-f="a${i}" value="${m.a[i]}"></td>`;
+    for(let i=0;i<3;i++) h+=`<td><input data-r="${r}" data-f="d${i}" value="${m.d[i]}"></td>`;
+    h+=`<td><input data-r="${r}" data-f="o1" value="${m.o1}"></td>`;
+    for(let i=3;i<6;i++) h+=`<td><input data-r="${r}" data-f="d${i}" value="${m.d[i]}"></td>`;
+    h+=`<td><input data-r="${r}" data-f="o2" value="${m.o2}"></td>`;
+    h+=`<td><input data-r="${r}" data-f="see" value="${m.see}" style="width:52px"></td>`;
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  wrap.innerHTML = h;
+  wrap.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const r = inp.dataset.r, f = inp.dataset.f;
+      if(!S.marks[r]) S.marks[r]=blankRecord();
+      const v = inp.value.trim().toUpperCase();
+      if(f==='o1') S.marks[r].o1=v;
+      else if(f==='o2') S.marks[r].o2=v;
+      else if(f==='see') S.marks[r].see=v;
+      else if(f[0]==='a') S.marks[r].a[+f[1]]=v;
+      else if(f[0]==='d') S.marks[r].d[+f[1]]=v;
+      persist(); marksStats();
+    });
+  });
+  marksStats();
+}
+function countFilled(get){ return S.rolls.filter(r=>{const m=S.marks[r]; return m && get(m)!=='' ;}).length; }
+function marksStats(){
+  $('marksStats').innerHTML = `
+    <div class="stat"><b>${S.rolls.length}</b>students</div>
+    <div class="stat"><b>${countFilled(m=>m.d[0])}</b>Mid-1 entries</div>
+    <div class="stat"><b>${countFilled(m=>m.d[3])}</b>Mid-2 entries</div>
+    <div class="stat"><b>${countFilled(m=>m.a[0])}</b>Assignment-1</div>
+    <div class="stat"><b>${countFilled(m=>m.see)}</b>SEE grades</div>`;
+}
+
+/* ============================================================
+   STEP 3 — CES & CO-PO
+============================================================ */
+function renderCES(){
+  const g = $('cesGrid');
+  g.innerHTML = COs.map((co,i)=>`
+    <div><label class="f">${co} — CES score (0–3)</label>
+    <input type="number" step="0.01" min="0" max="3" value="${S.ces[i]||''}" data-i="${i}" class="cesIn"></div>`).join('');
+  g.querySelectorAll('.cesIn').forEach(inp=>inp.addEventListener('change',()=>{
+    S.ces[+inp.dataset.i] = parseFloat(inp.value)||0; persist();
+  }));
+}
+function renderCoPo(){
+  const t = $('copoTable');
+  let h = '<thead><tr><th class="reg">CO \\ PO</th>' + POS.map(p=>`<th>${p}</th>`).join('') + '</tr></thead><tbody>';
+  COs.forEach((co,i)=>{
+    h += `<tr><td class="reg">${co}</td>`;
+    POS.forEach((p,j)=>{
+      h += `<td><input maxlength="1" data-i="${i}" data-j="${j}" value="${S.copo[i][j]||''}" class="cpIn"></td>`;
+    });
+    h += '</tr>';
+  });
+  h += '</tbody>';
+  t.innerHTML = h;
+  t.querySelectorAll('.cpIn').forEach(inp=>inp.addEventListener('change',()=>{
+    const v = inp.value.trim();
+    inp.value = /^[123]$/.test(v)? v : '';
+    S.copo[+inp.dataset.i][+inp.dataset.j] = inp.value; persist();
+  }));
+}
+function clearCoPo(){
+  if(!confirm('Clear the whole CO–PO mapping?')) return;
+  S.copo = COs.map(()=>POS.map(()=>'')); persist(); renderCoPo();
+}
+
+/* ============================================================
+   ATTAINMENT ENGINE
+============================================================ */
+function num(v){ const n = parseFloat(v); return isFinite(n)? n : null; }
+function isAbsent(v){ return String(v).trim().toUpperCase()==='AB'; }
+function seeGP(v){
+  if(v===''||v===null||v===undefined) return null;
+  const s = String(v).trim().toUpperCase();
+  if(s==='AB') return 'AB';
+  if(GRADE_GP[s]!==undefined) return GRADE_GP[s];
+  const n = parseFloat(s);
+  return isFinite(n)? n : null;
+}
+function levelOf(pct, cfg){
+  if(pct===null) return null;
+  if(pct >= cfg.l3) return 3;
+  if(pct >= cfg.l2) return 2;
+  if(pct >= cfg.l1) return 1;
+  return 0;
+}
+function getCfg(){
+  return {
+    target:+$('cfg_target').value, l3:+$('cfg_l3').value, l2:+$('cfg_l2').value, l1:+$('cfg_l1').value,
+    seepass:+$('cfg_seepass').value, targetlvl:+$('cfg_targetlvl').value,
+    wsee:+$('cfg_wsee').value/100, wint:+$('cfg_wint').value/100,
+    wdir:+$('cfg_wdir').value/100, wind:+$('cfg_wind').value/100,
+    maxasg:+$('cfg_maxasg').value, maxdesc:+$('cfg_maxdesc').value, maxobj:+$('cfg_maxobj').value
+  };
+}
+// % of students achieving target for a list of {mark,max}
+function achievePct(vals, cfg){
+  let appeared=0, achieved=0;
+  vals.forEach(v=>{
+    if(v.raw===''||v.raw===null||v.raw===undefined) return;
+    if(isAbsent(v.raw)) return;               // absent: not appeared
+    const n = num(v.raw); if(n===null) return;
+    appeared++;
+    if((n/v.max)*100 >= cfg.target) achieved++;
+  });
+  if(!appeared) return {pct:null, appeared:0, achieved:0};
+  return {pct:(achieved/appeared)*100, appeared, achieved};
+}
+
+function compute(){
+  const cfg = getCfg();
+  const perCO = COs.map((co,i)=>{
+    // descriptive
+    const dvals = S.rolls.map(r=>({raw:(S.marks[r]||{}).d?.[i], max:cfg.maxdesc}));
+    const dRes  = achievePct(dvals, cfg);
+    // objective: obj1 -> CO1-3, obj2 -> CO4-6
+    const ovals = S.rolls.map(r=>({raw: i<3 ? (S.marks[r]||{}).o1 : (S.marks[r]||{}).o2, max:cfg.maxobj}));
+    const oRes  = achievePct(ovals, cfg);
+    // assignment
+    const avals = S.rolls.map(r=>({raw:(S.marks[r]||{}).a?.[i], max:cfg.maxasg}));
+    const aRes  = achievePct(avals, cfg);
+    const dL = levelOf(dRes.pct,cfg), oL = levelOf(oRes.pct,cfg), aL = levelOf(aRes.pct,cfg);
+    const parts = [dL,oL,aL].filter(x=>x!==null);
+    const intL = parts.length ? Math.round(parts.reduce((s,x)=>s+x,0)/parts.length) : null;
+    return {co, dPct:dRes.pct, dL, oPct:oRes.pct, oL, aPct:aRes.pct, aL, intL,
+            dStat:dRes, oStat:oRes, aStat:aRes};
+  });
+
+  // SEE (applies to all COs)
+  let appeared=0, achieved=0;
+  S.rolls.forEach(r=>{
+    const gp = seeGP((S.marks[r]||{}).see);
+    if(gp===null||gp==='AB') return;
+    appeared++;
+    if(gp >= cfg.seepass) achieved++;
+  });
+  const seePct = appeared? (achieved/appeared)*100 : null;
+  const seeL = levelOf(seePct,cfg);
+
+  const rows = perCO.map((p,i)=>{
+    const direct = (seeL!==null && p.intL!==null) ? cfg.wsee*seeL + cfg.wint*p.intL
+                 : (p.intL!==null ? p.intL : (seeL!==null? seeL : null));
+    const ces = S.ces[i]||0;
+    const overall = direct!==null ? cfg.wdir*direct + cfg.wind*ces : (ces? ces*cfg.wind : null);
+    const gap = overall!==null ? cfg.targetlvl - overall : null;
+    return {...p, seeL, seePct, direct, ces, overall, gap};
+  });
+
+  // Course-level average attainments — used for all CO-PO calculations
+  const avgList = list => { const v=list.filter(x=>x!==null&&x!==undefined); return v.length? v.reduce((s,x)=>s+x,0)/v.length : null; };
+  const avgOverall  = avgList(rows.map(r=>r.overall));   // overall CO attainment
+  const avgDirect   = avgList(rows.map(r=>r.direct));    // direct CO attainment
+  const avgIndirect = avgList(rows.map(r=>r.ces));       // indirect (CES) CO attainment
+
+  // PO attainment: course-level attainment × (average mapping strength / 3),
+  // irrespective of individual (respective) CO attainment values
+  const mapAvgs = POS.map((_,j)=>{
+    let c=0,t=0; COs.forEach((_,i)=>{const m=parseFloat(S.copo[i][j]); if(isFinite(m)){c++;t+=m;}});
+    return c? t/c : null;
+  });
+  const mkPO = base => POS.map((p,j)=>({
+    po:p, mapAvg:mapAvgs[j],
+    attain:(mapAvgs[j]!==null && base!==null)? base*mapAvgs[j]/3 : null
+  }));
+  const po         = mkPO(avgOverall);   // overall CO-PO attainment
+  const poDirect   = mkPO(avgDirect);    // direct CO-PO attainment
+  const poIndirect = mkPO(avgIndirect);  // indirect CO-PO attainment
+
+  const avgOf = list => { const v=list.map(p=>p.attain).filter(x=>x!==null); return v.length? v.reduce((s,x)=>s+x,0)/v.length : null; };
+  const triple = arr => ({
+    po:  avgOf(arr.filter(p=>!p.po.startsWith('PSO'))),
+    pso: avgOf(arr.filter(p=> p.po.startsWith('PSO'))),
+    all: avgOf(arr)
+  });
+  const tOverall = triple(po), tDirect = triple(poDirect), tIndirect = triple(poIndirect);
+  const avgPO = tOverall.po, avgPSO = tOverall.pso, avgPOPSO = tOverall.all;
+  return {cfg, rows, seeL, seePct, seeStat:{appeared,achieved},
+          po, poDirect, poIndirect,
+          avgOverall, avgDirect, avgIndirect,
+          avgPO, avgPSO, avgPOPSO,
+          dirPO:tDirect.po, dirPSO:tDirect.pso, dirPOPSO:tDirect.all,
+          indPO:tIndirect.po, indPSO:tIndirect.pso, indPOPSO:tIndirect.all};
+}
+
+/* ============================================================
+   REPORT RENDERING
+============================================================ */
+function fmt(v,d=2){ return (v===null||v===undefined)? '—' : (+v).toFixed(d).replace(/\.00$/,''); }
+function lvlCell(v){
+  if(v===null||v===undefined) return '<td>—</td>';
+  const r = Math.round(v);
+  return `<td class="lvl${Math.max(0,Math.min(3,r))}">${(+v).toFixed(v%1?2:0)}</td>`;
+}
+function reportHeader(title){
+  return `<div class="report-head">
+    <h2>${S.info.inst||''}</h2>
+    <div class="d">${S.info.dept||''}</div>
+    <div class="d"><b>${title}</b></div>
+    <div class="d">Course: ${S.info.sub||'—'} (${S.info.subcode||'—'}) · Faculty: ${S.info.fac||'—'} ·
+      AY ${S.info.ay||'—'} · ${S.info.ysem||''} · Class: ${S.info.cls||'—'}</div>
+  </div>`;
+}
+
+function renderReports(){
+  persist();
+  const area = $('reportsArea');
+  if(!S.rolls.length){ area.innerHTML='<div class="card"><p>Load roll numbers and marks first.</p></div>'; return; }
+  const R = compute();
+
+  /* ---- Report 1: CO attainment gap ---- */
+  let r1 = `<div class="card" id="rep1">${reportHeader('CO Attainment Gap Analysis')}
+  <div class="tablewrap"><table><thead>
+    <tr><th rowspan="2">CO</th><th colspan="4">Internal attainment</th><th rowspan="2">SEE</th>
+        <th rowspan="2">Direct CO<br>attainment</th><th rowspan="2">CES<br>(indirect)</th>
+        <th rowspan="2">Overall CO<br>attainment</th><th rowspan="2">Target</th><th rowspan="2">Gap<br>(Target − Overall)</th>
+        <th rowspan="2">Action proposed to bridge the gap</th></tr>
+    <tr><th>Descriptive</th><th>Objective</th><th>Assignment</th><th>CO-wise</th></tr>
+  </thead><tbody>`;
+  R.rows.forEach((r,i)=>{
+    r1 += `<tr><td class="reg">${r.co}</td>${lvlCell(r.dL)}${lvlCell(r.oL)}${lvlCell(r.aL)}${lvlCell(r.intL)}
+      ${lvlCell(r.seeL)}${lvlCell(r.direct)}<td>${fmt(r.ces)}</td>${lvlCell(r.overall)}
+      <td>${R.cfg.targetlvl}</td>
+      <td>${r.gap===null?'—':(r.gap<=0?'<span class="pill ok">Met</span>':`<span class="pill ${r.gap>1?'bad':'warn'}">${fmt(r.gap)}</span>`)}</td>
+      <td style="min-width:220px"><input type="text" style="width:100%;text-align:left" data-i="${i}" class="actIn" value="${(S.actions[i]||'').replace(/"/g,'&quot;')}" placeholder="e.g. Remedial class, tutorial sheets…"></td></tr>`;
+  });
+  r1 += `</tbody></table></div></div>`;
+
+  /* ---- Report 2: Course (CO) attainment ---- */
+  let r2 = `<div class="card" id="rep2">${reportHeader('Course (CO) Attainment')}
+  <div class="tablewrap"><table><thead>
+    <tr><th>CO</th><th>SEE</th><th>Internal</th><th>Direct attainment<br>(${R.cfg.wsee*100}% SEE + ${R.cfg.wint*100}% Int)</th>
+    <th>CES / CO feedback</th><th>Overall CO attainment<br>(${R.cfg.wdir*100}% Direct + ${R.cfg.wind*100}% CES)</th></tr>
+  </thead><tbody>`;
+  R.rows.forEach(r=>{
+    r2 += `<tr><td class="reg">${r.co}</td>${lvlCell(r.seeL)}${lvlCell(r.intL)}${lvlCell(r.direct)}
+      <td>${fmt(r.ces)}</td>${lvlCell(r.overall)}</tr>`;
+  });
+  r2 += `<tr><td colspan="5" style="text-align:right;font-weight:700">Overall course attainment</td>${lvlCell(R.avgOverall)}</tr>
+  </tbody></table></div>
+  <div class="statbar">
+    <div class="stat"><b>${fmt(R.seePct,1)}%</b>students achieved SEE target (${R.seeStat.achieved}/${R.seeStat.appeared})</div>
+    <div class="stat"><b>${fmt(R.avgOverall)}</b>average CO attainment</div>
+  </div></div>`;
+
+  /* ---- Report 3: PO attainment ---- */
+  let r3 = `<div class="card" id="rep3">${reportHeader('PO / PSO Attainment')}
+  <h3>CO–PO mapping</h3>
+  <div class="tablewrap"><table><thead><tr><th class="reg">CO</th>${POS.map(p=>`<th>${p}</th>`).join('')}</tr></thead><tbody>`;
+  COs.forEach((co,i)=>{
+    r3 += `<tr><td class="reg">${co}</td>${POS.map((_,j)=>`<td>${S.copo[i][j]||''}</td>`).join('')}</tr>`;
+  });
+  r3 += `<tr><td class="reg">Avg mapping</td>${R.po.map(p=>`<td>${p.mapAvg===null?'':fmt(p.mapAvg,2)}</td>`).join('')}</tr>
+  </tbody></table></div>
+  <h3>PO attainment = Overall CO attainment (${fmt(R.avgOverall)}) × Avg mapping ÷ 3 (on 3-point scale)</h3>
+  <div class="tablewrap"><table><thead><tr>${POS.map(p=>`<th>${p}</th>`).join('')}</tr></thead>
+  <tbody><tr>${R.po.map(p=>lvlCell(p.attain)).join('')}</tr></tbody></table></div>
+  <h3>Overall attainment</h3>
+  <div class="tablewrap"><table><thead><tr><th>Overall PO attainment</th><th>Overall PSO attainment</th><th>Overall PO + PSO attainment</th></tr></thead>
+  <tbody><tr>${lvlCell(R.avgPO)}${lvlCell(R.avgPSO)}${lvlCell(R.avgPOPSO)}</tr></tbody></table></div>
+  <div class="statbar">
+    <div class="stat"><b>${fmt(R.avgPO)}</b>Overall PO attainment (average of PO1–PO12)</div>
+    <div class="stat"><b>${fmt(R.avgPSO)}</b>Overall PSO attainment (average of PSOs)</div>
+  </div></div>`;
+
+  /* ---- Reports 4–6: Direct, Indirect & Overall CO–PO attainment ---- */
+  function copoMatrixCard(id, title, colLabel, rowVal, base, poArr, poTriple, hintName){
+    let h = `<div class="card" id="${id}">${reportHeader(title)}
+    <div class="tablewrap"><table><thead>
+      <tr><th class="reg">CO</th><th>${colLabel}</th>${POS.map(p=>`<th>${p}</th>`).join('')}</tr>
+    </thead><tbody>`;
+    R.rows.forEach((r,i)=>{
+      h += `<tr><td class="reg">${r.co}</td>${lvlCell(rowVal(r))}`;
+      POS.forEach((_,j)=>{
+        const m = parseFloat(S.copo[i][j]);
+        if(isFinite(m) && base!==null){
+          h += lvlCell(base * m/3);
+        } else h += '<td></td>';
+      });
+      h += '</tr>';
+    });
+    h += `<tr><td class="reg" style="font-weight:700">PO attainment</td>${lvlCell(base)}${poArr.map(p=>lvlCell(p.attain)).join('')}</tr>
+    </tbody></table></div>
+    <div class="statbar">
+      <div class="stat"><b>${fmt(poTriple.po)}</b>${hintName} PO attainment (PO1–PO12)</div>
+      <div class="stat"><b>${fmt(poTriple.pso)}</b>${hintName} PSO attainment</div>
+      <div class="stat"><b>${fmt(poTriple.all)}</b>${hintName} PO + PSO attainment</div>
+    </div>
+    <p class="hint" style="margin-top:8px">Cells show the ${hintName.toLowerCase()} CO attainment (${fmt(base)}) scaled by mapping strength (attainment × map/3), irrespective of individual CO attainment. Final row: PO attainment = ${hintName.toLowerCase()} CO attainment × avg mapping ÷ 3.</p></div>`;
+    return h;
+  }
+  const r4 = copoMatrixCard('rep4','Direct CO–PO Attainment','Direct CO attainment',
+      r=>r.direct, R.avgDirect, R.poDirect, {po:R.dirPO,pso:R.dirPSO,all:R.dirPOPSO}, 'Direct');
+  const r5 = copoMatrixCard('rep5','Indirect CO–PO Attainment (CES)','CES / Indirect CO attainment',
+      r=>r.ces, R.avgIndirect, R.poIndirect, {po:R.indPO,pso:R.indPSO,all:R.indPOPSO}, 'Indirect');
+  const r6 = copoMatrixCard('rep6','Overall CO–PO Attainment Summary','Overall CO attainment',
+      r=>r.overall, R.avgOverall, R.po, {po:R.avgPO,pso:R.avgPSO,all:R.avgPOPSO}, 'Overall');
+
+  area.innerHTML = r1+r2+r3+r4+r5+r6;
+  area.querySelectorAll('.actIn').forEach(inp=>inp.addEventListener('change',()=>{
+    S.actions[+inp.dataset.i]=inp.value; persist();
+  }));
+  document.querySelector('nav.steps button[data-step="3"]').classList.add('done');
+}
+
+/* ============================================================
+   EXPORT — EXCEL
+============================================================ */
+function exportExcel(){
+  if(!S.rolls.length){ showMsg('repMsg','Nothing to export — load data first.',false); return; }
+  persist();
+  const R = compute();
+  const wb = XLSX.utils.book_new();
+  const hdr = [
+    [S.info.inst||''],[S.info.dept||''],[],
+    ['Course', S.info.sub||'', 'Code', S.info.subcode||'', 'Faculty', S.info.fac||''],
+    ['Academic Year', S.info.ay||'', 'Year & Sem', S.info.ysem||'', 'Class', S.info.cls||''],[]
+  ];
+
+  // Sheet: Course Info + rules
+  const info = hdr.concat([
+    ['Attainment rules'],
+    ['Target % per student', R.cfg.target],
+    ['Level 3 ≥ % achievers', R.cfg.l3],
+    ['Level 2 ≥ % achievers', R.cfg.l2],
+    ['Level 1 ≥ % achievers', R.cfg.l1],
+    ['SEE pass grade point ≥', R.cfg.seepass],
+    ['Direct = '+R.cfg.wsee*100+'% SEE + '+R.cfg.wint*100+'% Internal'],
+    ['Overall = '+R.cfg.wdir*100+'% Direct + '+R.cfg.wind*100+'% CES']
+  ]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(info), 'Read Me');
+
+  // Sheet: Marks
+  const mk = [HEADERS];
+  S.rolls.forEach(r=>{
+    const m = S.marks[r]||blankRecord();
+    mk.push([r, ...m.a, m.d[0],m.d[1],m.d[2], m.o1, m.d[3],m.d[4],m.d[5], m.o2, m.see]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(mk), 'Marks');
+
+  // Sheet: CO Attainment Gap
+  const gap = hdr.concat([
+    ['CO Attainment Gap Analysis'],
+    ['CO','Descriptive','Objective','Assignment','Internal (CO-wise)','SEE','Direct','CES (Indirect)','Overall','Target','Gap','Action proposed']
+  ]);
+  R.rows.forEach((r,i)=>gap.push([r.co, r.dL, r.oL, r.aL, r.intL, r.seeL,
+    r.direct===null?'':+r.direct.toFixed(2), +r.ces.toFixed(2),
+    r.overall===null?'':+r.overall.toFixed(2), R.cfg.targetlvl,
+    r.gap===null?'':+r.gap.toFixed(2), S.actions[i]||'']));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(gap), 'CO Attainment Gap');
+
+  // Sheet: CO Attainment
+  const ca = hdr.concat([
+    ['Course (CO) Attainment'],
+    ['CO','SEE','Internal','Direct Attainment','CES','Overall CO Attainment']
+  ]);
+  R.rows.forEach(r=>ca.push([r.co, r.seeL, r.intL,
+    r.direct===null?'':+r.direct.toFixed(2), +r.ces.toFixed(2),
+    r.overall===null?'':+r.overall.toFixed(2)]));
+  ca.push(['Overall course attainment','','','','', R.avgOverall===null?'':+R.avgOverall.toFixed(2)]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ca), 'CO Attainment');
+
+  // Sheet: PO attainment
+  const po = hdr.concat([['CO–PO Mapping'], ['CO', ...POS]]);
+  COs.forEach((co,i)=>po.push([co, ...POS.map((_,j)=>S.copo[i][j]||'')]));
+  po.push(['Avg mapping', ...R.po.map(p=>p.mapAvg===null?'':+p.mapAvg.toFixed(2))]);
+  po.push([]);
+  po.push(['PO Attainment = Overall CO attainment ('+(R.avgOverall===null?'-':+R.avgOverall.toFixed(2))+') × Avg mapping ÷ 3']);
+  po.push(['PO Attainment', ...R.po.map(p=>p.attain===null?'':+p.attain.toFixed(2))]);
+  po.push([]);
+  po.push(['Overall PO Attainment (PO1–PO12)', R.avgPO===null?'':+R.avgPO.toFixed(2)]);
+  po.push(['Overall PSO Attainment', R.avgPSO===null?'':+R.avgPSO.toFixed(2)]);
+  po.push(['Overall PO + PSO Attainment', R.avgPOPSO===null?'':+R.avgPOPSO.toFixed(2)]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(po), 'PO Attainment');
+
+  // Sheets: Direct / Indirect / Overall CO-PO
+  function copoSheet(title, colLabel, rowVal, base, poArr, tPO, tPSO, tALL, sheetName){
+    const ov = hdr.concat([[title], ['CO', colLabel, ...POS]]);
+    R.rows.forEach((r,i)=>{
+      const v = rowVal(r);
+      ov.push([r.co, v===null||v===undefined?'':+(+v).toFixed(2),
+        ...POS.map((_,j)=>{
+          const m = parseFloat(S.copo[i][j]);
+          return (isFinite(m)&&base!==null)? +(base*m/3).toFixed(2) : '';
+        })]);
+    });
+    ov.push(['PO attainment', base===null?'':+base.toFixed(2), ...poArr.map(p=>p.attain===null?'':+p.attain.toFixed(2))]);
+    ov.push([]);
+    ov.push([title+' — PO (PO1–PO12)', tPO===null?'':+tPO.toFixed(2)]);
+    ov.push([title+' — PSO', tPSO===null?'':+tPSO.toFixed(2)]);
+    ov.push([title+' — PO + PSO', tALL===null?'':+tALL.toFixed(2)]);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ov), sheetName);
+  }
+  copoSheet('Direct CO–PO Attainment','Direct CO attainment', r=>r.direct,
+    R.avgDirect, R.poDirect, R.dirPO, R.dirPSO, R.dirPOPSO, 'Direct CO-PO');
+  copoSheet('Indirect CO–PO Attainment (CES)','CES / Indirect CO attainment', r=>r.ces,
+    R.avgIndirect, R.poIndirect, R.indPO, R.indPSO, R.indPOPSO, 'Indirect CO-PO');
+  copoSheet('Overall CO–PO Attainment','Overall CO attainment', r=>r.overall,
+    R.avgOverall, R.po, R.avgPO, R.avgPSO, R.avgPOPSO, 'Overall CO-PO');
+
+  XLSX.writeFile(wb, `CO_PO_Attainment_${S.info.subcode||'course'}_${S.info.ay||''}.xlsx`);
+  showMsg('repMsg','Excel workbook downloaded.',true);
+}
+
+/* ============================================================
+   EXPORT — PDF
+============================================================ */
+function exportPDF(){
+  if(!S.rolls.length){ showMsg('repMsg','Nothing to export — load data first.',false); return; }
+  persist();
+  const R = compute();
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape', unit:'pt', format:'a4'});
+  const W = doc.internal.pageSize.getWidth();
+
+  function head(title, y){
+    doc.setFont('helvetica','bold'); doc.setFontSize(13);
+    doc.text(S.info.inst||'', W/2, y, {align:'center'});
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text(S.info.dept||'', W/2, y+15, {align:'center'});
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text(title, W/2, y+31, {align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    doc.text(`Course: ${S.info.sub||'-'} (${S.info.subcode||'-'})   Faculty: ${S.info.fac||'-'}   AY: ${S.info.ay||'-'}   ${S.info.ysem||''}   Class: ${S.info.cls||'-'}`, W/2, y+45, {align:'center'});
+    return y+56;
+  }
+  const th = {fillColor:[27,42,65], textColor:255, fontSize:7.5, halign:'center'};
+  const td = {fontSize:7.5, halign:'center'};
+  const f2 = v => v===null||v===undefined ? '-' : (+v).toFixed(2).replace(/\.00$/,'');
+
+  /* Page 1 — CO Attainment Gap */
+  let y = head('CO Attainment Gap Analysis', 40);
+  doc.autoTable({
+    startY:y, styles:td, headStyles:th, theme:'grid',
+    head:[[{content:'CO',rowSpan:2},{content:'Internal attainment',colSpan:4},{content:'SEE',rowSpan:2},
+      {content:'Direct',rowSpan:2},{content:'CES (Indirect)',rowSpan:2},{content:'Overall',rowSpan:2},
+      {content:'Target',rowSpan:2},{content:'Gap',rowSpan:2},{content:'Action proposed',rowSpan:2}],
+      ['Descriptive','Objective','Assignment','CO-wise']],
+    body:R.rows.map((r,i)=>[r.co, f2(r.dL), f2(r.oL), f2(r.aL), f2(r.intL), f2(r.seeL),
+      f2(r.direct), f2(r.ces), f2(r.overall), R.cfg.targetlvl,
+      r.gap===null?'-':(r.gap<=0?'Met':f2(r.gap)), S.actions[i]||'']),
+    columnStyles:{11:{halign:'left', cellWidth:180}}
+  });
+
+  /* Page 2 — CO attainment */
+  doc.addPage();
+  y = head('Course (CO) Attainment', 40);
+  doc.autoTable({
+    startY:y, styles:td, headStyles:th, theme:'grid',
+    head:[['CO','SEE','Internal',`Direct (${R.cfg.wsee*100}% SEE + ${R.cfg.wint*100}% Int)`,
+      'CES / CO feedback',`Overall (${R.cfg.wdir*100}% Direct + ${R.cfg.wind*100}% CES)`]],
+    body: R.rows.map(r=>[r.co, f2(r.seeL), f2(r.intL), f2(r.direct), f2(r.ces), f2(r.overall)])
+      .concat([[{content:'Overall course attainment',colSpan:5,styles:{fontStyle:'bold',halign:'right'}}, f2(R.avgOverall)]])
+  });
+  doc.setFontSize(8.5);
+  doc.text(`SEE: ${R.seeStat.achieved}/${R.seeStat.appeared} students achieved target (${f2(R.seePct)}%).`, 40, doc.lastAutoTable.finalY + 16);
+
+  /* Page 3 — CO-PO mapping + PO attainment */
+  doc.addPage();
+  y = head('PO / PSO Attainment', 40);
+  doc.autoTable({
+    startY:y, styles:{fontSize:7,halign:'center'}, headStyles:th, theme:'grid',
+    head:[['CO', ...POS]],
+    body: COs.map((co,i)=>[co, ...POS.map((_,j)=>S.copo[i][j]||'')])
+      .concat([['Avg map', ...R.po.map(p=>p.mapAvg===null?'':f2(p.mapAvg))]])
+  });
+  doc.autoTable({
+    startY:doc.lastAutoTable.finalY+14, styles:{fontSize:7,halign:'center'}, headStyles:th, theme:'grid',
+    head:[['', ...POS]],
+    body:[['PO attainment', ...R.po.map(p=>p.attain===null?'-':f2(p.attain))]]
+  });
+  doc.setFontSize(7.5);
+  doc.text(`PO attainment = Overall CO attainment (${f2(R.avgOverall)}) × Avg mapping / 3`, 40, doc.lastAutoTable.finalY + 10);
+  doc.autoTable({
+    startY:doc.lastAutoTable.finalY+22, styles:{fontSize:8,halign:'center'}, headStyles:th, theme:'grid',
+    head:[['Overall PO attainment (PO1–PO12)','Overall PSO attainment','Overall PO + PSO attainment']],
+    body:[[f2(R.avgPO), f2(R.avgPSO), f2(R.avgPOPSO)]]
+  });
+
+  /* Pages 4–6 — Direct, Indirect & Overall CO-PO */
+  function copoPage(title, colHead, rowVal, base, poArr, tPO, tPSO, tALL){
+    doc.addPage();
+    let yy = head(title, 40);
+    doc.autoTable({
+      startY:yy, styles:{fontSize:6.8,halign:'center'}, headStyles:{...th,fontSize:6.8}, theme:'grid',
+      head:[['CO',colHead, ...POS]],
+      body: R.rows.map((r,i)=>[r.co, f2(rowVal(r)),
+          ...POS.map((_,j)=>{ const m=parseFloat(S.copo[i][j]);
+            return (isFinite(m)&&base!==null)? f2(base*m/3):''; })])
+        .concat([['PO attainment', f2(base), ...poArr.map(p=>p.attain===null?'-':f2(p.attain))]])
+    });
+    doc.autoTable({
+      startY:doc.lastAutoTable.finalY+14, styles:{fontSize:8,halign:'center'}, headStyles:th, theme:'grid',
+      head:[['PO attainment (PO1–PO12)','PSO attainment','PO + PSO attainment']],
+      body:[[f2(tPO), f2(tPSO), f2(tALL)]]
+    });
+    doc.setFontSize(7.5);
+    doc.text(`PO attainment = ${colHead} (course average ${f2(base)}) × Avg mapping / 3`, 40, doc.lastAutoTable.finalY + 12);
+  }
+  copoPage('Direct CO–PO Attainment','Direct CO', r=>r.direct,
+    R.avgDirect, R.poDirect, R.dirPO, R.dirPSO, R.dirPOPSO);
+  copoPage('Indirect CO–PO Attainment (CES)','Indirect CO (CES)', r=>r.ces,
+    R.avgIndirect, R.poIndirect, R.indPO, R.indPSO, R.indPOPSO);
+  copoPage('Overall CO–PO Attainment Summary','Overall CO', r=>r.overall,
+    R.avgOverall, R.po, R.avgPO, R.avgPSO, R.avgPOPSO);
+  doc.setFontSize(7.5);
+  doc.text('Generated by CO–PO Attainment Calculator · ' + new Date().toLocaleDateString('en-IN'), 40, doc.internal.pageSize.getHeight()-20);
+
+  doc.save(`CO_PO_Attainment_${S.info.subcode||'course'}_${S.info.ay||''}.pdf`);
+  showMsg('repMsg','PDF downloaded.',true);
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+document.addEventListener('DOMContentLoaded', ()=>{
+  restore();
+  rollStats();
+});
+</script>
+</body>
+</html>
